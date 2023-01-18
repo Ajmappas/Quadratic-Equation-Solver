@@ -1,0 +1,16 @@
+﻿  main.cpp
+E:\programFiles\VisualStudio19\Projects\MathsProject\MathsProject\main.cpp(19,17): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
+E:\programFiles\VisualStudio19\Projects\MathsProject\MathsProject\main.cpp(38,10): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
+E:\programFiles\VisualStudio19\Projects\MathsProject\MathsProject\main.cpp(39,11): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
+E:\programFiles\VisualStudio19\Projects\MathsProject\MathsProject\main.cpp(40,11): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
+E:\programFiles\VisualStudio19\Projects\MathsProject\MathsProject\main.cpp(62,66): warning C4244: 'argument': conversion from 'double' to 'T', possible loss of data
+          with
+          [
+              T=float
+          ]
+E:\programFiles\VisualStudio19\Projects\MathsProject\MathsProject\main.cpp(62,42): warning C4244: 'argument': conversion from 'double' to 'T', possible loss of data
+          with
+          [
+              T=float
+          ]
+  MathsProject.vcxproj -> E:\programFiles\VisualStudio19\Projects\MathsProject\x64\Debug\MathsProject.exe
