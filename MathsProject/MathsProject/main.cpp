@@ -1,110 +1,153 @@
-#include <iostream>
-#include <SFML/Graphics.hpp>
+﻿#include <iostream>
+#include <vector>
+#include <Print>
+#include <string>
 
-float Square(float value) {
+#include <raylib.h>
+#include <raymath.h>
+#include <rlgl.h>
+
+#define RAYGUI_IMPLEMENTATION
+#include "raygui.h"
+
+float sqr(float value) {
 	// Multiply value two times
 	return (value) * (value);
 }
 
-auto SolveExisosh2ou(double a, double b, double c) {
-	double x1 = 0;
-	double x2 = 0;
-	double delta;
+bool drawngraph = false;
+std::vector<Vector2> points;
 
-	struct retVals
-	{
-		float x1, x2;
-	};
+char buf[256];
+bool foc1 = false;
 
-	delta = Square(b) - 4 * a * c;
+char buf1[256];
+bool foc2 = false;
 
-	std::cout << "The Square root of delta: " << delta << std::endl;
-	if (delta > 0) {
-		x1 = (- b + sqrt(delta)) / 2 * a;
-		x2 = (- b - sqrt(delta)) / 2 * a;
-
-		std::cout << "x1 = " << x1 << "|x2 = " << x2 << std::endl;
-	}
-	if (delta == 0)
-	{
-		x1 = x2 = -b / 2 * a;
-		std::cout << "Delta has a value of " << delta << "so x = " << x1 << std::endl;
-	}
-	if (delta < 0)
-	{
-		std::cout << "The delta has a value of  " << delta << " so the equation is not undefined." << std::endl;
-	}
-
-	float y = c;
-	float p1 = x1;
-	float p2 = x2;
-	std::cout << "y = " << y << " , " << "Point 1 p1 = " << p1 << " , " << "Point 2 p2 = " << p2 << std::endl;
-}
+char buf2[256];
+bool foc3 = false;
 
 void drawQuadraticGraph(double a, double b, double c, double xMin, double xMax, double xStep) {
-	// Create a window to draw the graph
-	sf::RenderWindow window(sf::VideoMode(1280, 720), "Quadratic Graph");
-	window.setFramerateLimit(60);
+	InitWindow(800, 600, "Quadratic Graph");
+	
+	Camera2D cam = {0};
+	cam.zoom = 1.f;
+	
+	Color DefTextColor = GetColor(GuiGetStyle(DEFAULT, LINE_COLOR));
 
-	// Define the origin of the graph in pixels
-	sf::Vector2f origin(400, 300);
+	Vector2 origin = { 400, 300 };
 
-	// Define the scale for the x and y values
-	double xScale = 30;
-	double yScale = 30;
+	float radius = 0;
+	float bradius = 1.5f;
 
-	// Loop through the x values within the given range
-	for (double x = xMin; x <= xMax; x += xStep) {
-		// Calculate the corresponding y value for the current x
-		double y = a * x * x + b * x + c;
+	sprintf_s(buf, sizeof(buf), "%0.2f", a);
+	sprintf_s(buf1, sizeof(buf1), "%0.2f", b);
+	sprintf_s(buf2, sizeof(buf2), "%0.2f", c);
+		
+	while (!WindowShouldClose()) {
+		
+		cam.zoom = expf(logf(cam.zoom) + ((float)GetMouseWheelMove() * 0.1f));
 
-		// Convert the x and y values to pixels
-		sf::Vector2f point((x - xMin) * xScale + origin.x, -y * yScale + origin.y);
-
-		// Draw a point at the current x and y values
-		sf::CircleShape shape(2);
-		shape.setFillColor(sf::Color::Cyan);
-		shape.setPosition(point);
-		window.draw(shape);
-	}
-
-	// Display the window
-	while (window.isOpen()) {
-		sf::Event event;
-		while (window.pollEvent(event)) {
-			if (event.type == sf::Event::Closed) {
-				window.close();
-			}
+		if (IsMouseButtonDown(MOUSE_BUTTON_LEFT))
+		{
+			Vector2 delta = GetMouseDelta();
+			delta = Vector2Scale(delta, -1.0f / cam.zoom);
+			cam.target = Vector2Add(cam.target, delta);
 		}
-		window.display();
+
+		BeginDrawing();
+
+		ClearBackground(RAYWHITE);
+				
+		const char* equition = TextFormat( u8"ax²+bx+c", a, b, c);
+		DrawTextEx(GetFontDefault(), equition, {10, 10}, 20, 5, DefTextColor);
+		
+
+#ifdef NDEBUG
+		GuiGroupBox({ 5, 40, 110, 125 }, "Equation");
+		
+		if (GuiTextBox({ 10, 50, 100, 20 }, buf, 20, foc1)) { foc1 = !foc1; }
+		if (GuiTextBox({ 10, 80, 100, 20 }, buf1, 20, foc2)) { foc2 = !foc2; }
+		if (GuiTextBox({ 10, 110, 100, 20 }, buf2, 20, foc3)) { foc3 = !foc3; }
+
+		if (GuiButton({ 10, 140, 100, 20 }, "Graph")) {
+			a = std::stod(buf);
+			b = std::stod(buf1);
+			c = std::stod(buf2);
+			drawngraph = false;
+		}
+#endif // _NDEBUG
+
+		radius = bradius / cam.zoom;
+
+#ifdef _DEBUG
+
+		const char* title = TextFormat("Quadratic Graph | FPS: %i", GetFPS());
+		SetWindowTitle(title);
+
+		GuiGroupBox({ 5, 80, 110, 125 }, "Equation");
+		
+		if (GuiTextBox({ 10, 90, 100, 20 }, buf, 20, foc1)) { foc1 = !foc1; }
+		if (GuiTextBox({ 10, 120, 100, 20 }, buf1, 20, foc2)) { foc2 = !foc2; }
+		if (GuiTextBox({ 10, 150, 100, 20 }, buf2, 20, foc3)) { foc3 = !foc3; }
+
+		if (GuiButton({ 10, 180, 100, 20 }, "Graph")) {
+			a = std::stod(buf);
+			b = std::stod(buf1);
+			c = std::stod(buf2);
+			drawngraph = false;
+		}
+
+		if (IsKeyPressed(KEY_PAGE_UP)) {
+			radius += 0.1f;
+		}
+		else if (IsKeyPressed(KEY_PAGE_DOWN)) {
+			radius -= 0.1f;
+		}
+		//Debug Text
+
+		const char* t = TextFormat("RADIUS: %f | ZOOM: %f", radius, cam.zoom);
+		DrawText(t, 10, 30, 20, DefTextColor);
+		const char* t2 = "DEBUG";
+		DrawText(t2, 800 - MeasureText(t2, 20) - 10, 10, 20, DefTextColor);
+				
+#endif // DEBUG
+		
+		BeginMode2D(cam);
+		
+		DrawLineV({ -100000, 300 }, { 100000, 300 }, DARKGRAY);
+		DrawLineV({ 400 , 100000 }, { 400, -100000 }, DARKGRAY);
+		 
+
+		if (drawngraph == false) {
+			points.clear();
+			for (double x = xMin; x <= xMax; x += xStep) {
+				// Calculate the corresponding y value for the current x
+				double y = (a * sqr(x)) + (b * x) + c;
+
+				// Convert the x and y values to pixels
+				Vector2 point = { x + origin.x, -y + origin.y };
+				
+				points.push_back(point);
+
+			}
+			drawngraph = true;
+		}
+		DrawSplineBezierQuadratic(points.data(), points.size(), radius, RED);
+
+		EndMode2D();
+		EndDrawing();
+
 	}
 }
 
 
 int main() {
-	float a;
-	float b;
-	float c;
+	float a = 0.1;
+	float b = 1;
+	float c = 0;
 	
-	std::cout << "________________________" << std::endl;
-	std::cout << "|       Quadratic      |" << std::endl;
-	std::cout << "|       Equation       |" << std::endl;
-	std::cout << "|       solver         |" << std::endl;
-	std::cout << "------------------------" << std::endl;
-
-	std::cout << " " << std::endl;
-
-	std::cout << "* Tip:The equation should" << std::endl;
-	std::cout << "have the type of: ax^2 + bx + c" << std::endl;
-
-	std::cout << " " << std::endl;
-
-	std::cout << "> Enter the value of a: "; std::cin >> a;
-	std::cout << "> Enter the value of b: "; std::cin >> b;
-	std::cout << "> Enter the value of c: "; std::cin >> c;
-
-	SolveExisosh2ou(a, b, c);
-	drawQuadraticGraph(a, b, c, -20, 20, 0.5);
+	drawQuadraticGraph(a, b, c, -2000, 2000, 1);
 
 	return 0;
 }
