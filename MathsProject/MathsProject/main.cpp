@@ -15,17 +15,116 @@ float sqr(float value) {
 	return (value) * (value);
 }
 
+std::string i = "  SIN(x) - 257.4 * x^2";
+
+enum TokenType
+{
+	NUMBER,
+	OPERATOR, 
+	VARIABLE,
+	FUNCTION,
+	L_PAREN,
+	R_PAREN
+};
+
+struct Token {
+	TokenType type;
+	std::string val;
+};
+
+std::string checkinput(std::string in) {
+	std::string out = { 0 };
+	for (int i = 0; i < in.length(); i++) {
+		if (in[i] == ' ') {
+			continue;
+		}
+		else if (std::isupper(in[i])) {
+			out += tolower(in[i]);
+		}
+		else if (in[i] == '#' || in[i] == '@') {
+			std::cout << "ERROR: INVALID CHARACTER!!!" << std::endl;
+			out = "";
+			break;
+		}
+		else {
+			out += in[i];
+		}
+	}
+	std::cout << out << std::endl;
+	return out;
+}
+
+void parse(std::string in) {
+	int i = 0;
+	std::vector<Token> tokens = {};
+	while (i < in.length()) {
+		if (isdigit(in[i])) {
+			int j = i + 1;
+			std::string tmp_buffer = "";
+			tmp_buffer += in[i];
+			while (isdigit(in[j]) || (in[j] == '.')) {
+				tmp_buffer += in[j];
+				j++;
+			}
+			tokens.push_back({ NUMBER, tmp_buffer });
+			if (j > i + 1) {
+				i = j-1;
+			}
+		}
+		else if (isalpha(in[i])) {
+			int j = i + 1;
+			std::string tmp_buffer = "";
+			tmp_buffer += in[i];
+			while (isalpha(in[j])) {
+				tmp_buffer += in[j];
+				j++;
+			}
+			if (tmp_buffer == "x") {
+				tokens.push_back({ VARIABLE, tmp_buffer });
+			}
+			else {
+				tokens.push_back({ FUNCTION, tmp_buffer });
+				i = j-1;
+			}
+		}
+		else if (in[i] == '+' || in[i] == '-' || in[i] == '*' || in[i] == '/' || in[i] == '^') {
+			std::string tmp_buffer = "";
+			tmp_buffer += in[i];
+			tokens.push_back({ OPERATOR, tmp_buffer});
+		}
+		else if (in[i] == '(' || in[i] == ')') {
+			std::string tmp_buffer = "";
+			tmp_buffer += in[i];
+			if (tmp_buffer == "(") {
+				tokens.push_back({ L_PAREN, tmp_buffer });
+			}
+			else {
+				tokens.push_back({ R_PAREN, tmp_buffer });
+			}
+		}
+		i++;
+	}
+	for (int i = 0; i < tokens.size(); i++) {
+		std::cout << tokens[i].type << " | " << tokens[i].val << std::endl;
+	}
+}
+
+//Graph toggle
 bool drawngraph = false;
+//Graph points
 std::vector<Vector2> points;
 
-char buf[256];
-bool foc1 = false;
+//TextBox1 Buffer and Focus toggle
+char tb1_buf[256];
+bool tb1_foc = false;
 
-char buf1[256];
-bool foc2 = false;
+//TextBox2 Buffer and Focus toggle
+char tb2_buf[256];
+bool tb2_foc = false;
 
-char buf2[256];
-bool foc3 = false;
+//TextBox3 Buffer and Focus toggle
+char tb3_buf[256];
+bool tb3_foc = false;
 
 void drawQuadraticGraph(double a, double b, double c, double xMin, double xMax, double xStep) {
 	InitWindow(800, 600, "Quadratic Graph");
@@ -35,14 +134,16 @@ void drawQuadraticGraph(double a, double b, double c, double xMin, double xMax, 
 	
 	Color DefTextColor = GetColor(GuiGetStyle(DEFAULT, LINE_COLOR));
 
+	//Screen origin
 	Vector2 origin = { 400, 300 };
 
 	float radius = 0;
 	float bradius = 1.5f;
 
-	sprintf_s(buf, sizeof(buf), "%0.2f", a);
-	sprintf_s(buf1, sizeof(buf1), "%0.2f", b);
-	sprintf_s(buf2, sizeof(buf2), "%0.2f", c);
+	//Converting the params from double to string and copying them to the buffers.
+	sprintf_s(tb1_buf, sizeof(tb1_buf), "%0.2f", a);
+	sprintf_s(tb2_buf, sizeof(tb2_buf), "%0.2f", b);
+	sprintf_s(tb3_buf, sizeof(tb3_buf), "%0.2f", c);
 		
 	while (!WindowShouldClose()) {
 		
@@ -62,50 +163,52 @@ void drawQuadraticGraph(double a, double b, double c, double xMin, double xMax, 
 		const char* equition = TextFormat( u8"ax²+bx+c", a, b, c);
 		DrawTextEx(GetFontDefault(), equition, {10, 10}, 20, 5, DefTextColor);
 		
-
+		//Running only on RELEASE build
 #ifdef NDEBUG
-		GuiGroupBox({ 5, 40, 110, 125 }, "Equation");
-		
-		if (GuiTextBox({ 10, 50, 100, 20 }, buf, 20, foc1)) { foc1 = !foc1; }
-		if (GuiTextBox({ 10, 80, 100, 20 }, buf1, 20, foc2)) { foc2 = !foc2; }
-		if (GuiTextBox({ 10, 110, 100, 20 }, buf2, 20, foc3)) { foc3 = !foc3; }
+		//Graph properties GUI
+		{
+			GuiGroupBox({ 5, 40, 110, 125 }, "Equation");
 
-		if (GuiButton({ 10, 140, 100, 20 }, "Graph")) {
-			a = std::stod(buf);
-			b = std::stod(buf1);
-			c = std::stod(buf2);
-			drawngraph = false;
+			if (GuiTextBox({ 10, 50, 100, 20 }, tb1_buf, 20, tb1_foc)) { tb1_foc = !tb1_foc; }
+			if (GuiTextBox({ 10, 80, 100, 20 }, tb2_buf, 20, tb2_foc)) { tb2_foc = !tb2_foc; }
+			if (GuiTextBox({ 10, 110, 100, 20 }, tb3_buf, 20, tb3_foc)) { tb3_foc = !tb3_foc; }
+
+			if (GuiButton({ 10, 140, 100, 20 }, "Graph")) {
+				a = std::stod(tb1_buf);
+				b = std::stod(tb2_buf);
+				c = std::stod(tb3_buf);
+				drawngraph = false;
+			}
 		}
 #endif // _NDEBUG
 
+		//Making radius dependant to camera zoom 
 		radius = bradius / cam.zoom;
 
-#ifdef _DEBUG
 
+		//Running only on DEBUG build
+#ifdef _DEBUG
+				
 		const char* title = TextFormat("Quadratic Graph | FPS: %i", GetFPS());
 		SetWindowTitle(title);
 
-		GuiGroupBox({ 5, 80, 110, 125 }, "Equation");
+		//Graph properties GUI
+		{
+			GuiGroupBox({ 5, 80, 110, 125 }, "Equation");
+
+			if (GuiTextBox({ 10, 90, 100, 20 }, tb1_buf, 20, tb1_foc)) { tb1_foc = !tb1_foc; }
+			if (GuiTextBox({ 10, 120, 100, 20 }, tb2_buf, 20, tb2_foc)) { tb2_foc = !tb2_foc; }
+			if (GuiTextBox({ 10, 150, 100, 20 }, tb3_buf, 20, tb3_foc)) { tb3_foc = !tb3_foc; }
+
+			if (GuiButton({ 10, 180, 100, 20 }, "Graph")) {
+				a = std::stod(tb1_buf);
+				b = std::stod(tb2_buf);
+				c = std::stod(tb3_buf);
+				drawngraph = false;
+			}
+		}
 		
-		if (GuiTextBox({ 10, 90, 100, 20 }, buf, 20, foc1)) { foc1 = !foc1; }
-		if (GuiTextBox({ 10, 120, 100, 20 }, buf1, 20, foc2)) { foc2 = !foc2; }
-		if (GuiTextBox({ 10, 150, 100, 20 }, buf2, 20, foc3)) { foc3 = !foc3; }
-
-		if (GuiButton({ 10, 180, 100, 20 }, "Graph")) {
-			a = std::stod(buf);
-			b = std::stod(buf1);
-			c = std::stod(buf2);
-			drawngraph = false;
-		}
-
-		if (IsKeyPressed(KEY_PAGE_UP)) {
-			radius += 0.1f;
-		}
-		else if (IsKeyPressed(KEY_PAGE_DOWN)) {
-			radius -= 0.1f;
-		}
 		//Debug Text
-
 		const char* t = TextFormat("RADIUS: %f | ZOOM: %f", radius, cam.zoom);
 		DrawText(t, 10, 30, 20, DefTextColor);
 		const char* t2 = "DEBUG";
@@ -115,10 +218,11 @@ void drawQuadraticGraph(double a, double b, double c, double xMin, double xMax, 
 		
 		BeginMode2D(cam);
 		
+		//X, Y Axis
 		DrawLineV({ -100000, 300 }, { 100000, 300 }, DARKGRAY);
 		DrawLineV({ 400 , 100000 }, { 400, -100000 }, DARKGRAY);
-		 
-
+		
+		//Calculating the Points only when the param change.
 		if (drawngraph == false) {
 			points.clear();
 			for (double x = xMin; x <= xMax; x += xStep) {
@@ -133,6 +237,7 @@ void drawQuadraticGraph(double a, double b, double c, double xMin, double xMax, 
 			}
 			drawngraph = true;
 		}
+		//Rendering the graph
 		DrawSplineBezierQuadratic(points.data(), points.size(), radius, RED);
 
 		EndMode2D();
@@ -143,10 +248,9 @@ void drawQuadraticGraph(double a, double b, double c, double xMin, double xMax, 
 
 
 int main() {
-	float a = 0.1;
-	float b = 1;
-	float c = 0;
-	
+	parse(checkinput(i));
+
+	float a = 0.1;	float b = 1; float c = 0;
 	drawQuadraticGraph(a, b, c, -2000, 2000, 1);
 
 	return 0;
